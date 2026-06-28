@@ -10,6 +10,10 @@ const list = document.getElementById("todo-list");
 const emptyMsg = document.getElementById("empty");
 const errorMsg = document.getElementById("error");
 
+// The todo the mouse is currently hovering over, or null. Used by the
+// Delete-key shortcut (TODOAPP-21) to know which todo to remove.
+let hoveredTodo = null;
+
 // --- API helpers --------------------------------------------------------
 
 async function getTodos() {
@@ -53,9 +57,27 @@ function clearError() {
   errorMsg.hidden = true;
 }
 
+// Deletes a todo and refreshes the list, surfacing any error. Shared by the
+// per-item Delete button and the Delete-key shortcut.
+async function removeTodo(id) {
+  try {
+    clearError();
+    await deleteTodo(id);
+    await refresh();
+  } catch (err) {
+    showError(err.message);
+  }
+}
+
 function renderTodo(todo) {
   const li = document.createElement("li");
   li.className = "todo-item" + (todo.isComplete ? " complete" : "");
+
+  // Track hover so the Delete-key shortcut knows which todo is targeted.
+  li.addEventListener("mouseenter", () => { hoveredTodo = todo; });
+  li.addEventListener("mouseleave", () => {
+    if (hoveredTodo === todo) hoveredTodo = null;
+  });
 
   const checkbox = document.createElement("input");
   checkbox.type = "checkbox";
@@ -79,15 +101,7 @@ function renderTodo(todo) {
   del.type = "button";
   del.className = "delete";
   del.textContent = "Delete";
-  del.addEventListener("click", async () => {
-    try {
-      clearError();
-      await deleteTodo(todo.id);
-      await refresh();
-    } catch (err) {
-      showError(err.message);
-    }
-  });
+  del.addEventListener("click", () => removeTodo(todo.id));
 
   li.append(checkbox, title, del);
   return li;
@@ -125,6 +139,17 @@ form.addEventListener("submit", async (e) => {
   } catch (err) {
     showError(err.message);
   }
+});
+
+// Keyboard shortcut (TODOAPP-21): pressing Delete removes the todo the mouse
+// is currently hovering over. Does nothing if the mouse isn't over a todo, and
+// is ignored while typing in the input field.
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Delete") return;
+  if (e.target === input) return; // don't hijack Delete while typing
+  if (!hoveredTodo) return;
+  e.preventDefault();
+  removeTodo(hoveredTodo.id);
 });
 
 // Initial load.
