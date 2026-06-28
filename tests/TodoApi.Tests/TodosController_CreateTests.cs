@@ -21,13 +21,14 @@ public class TodosController_CreateTests
 
         var result = controller.Create(new Todo { Title = "Buy milk" });
 
-        var created = Assert.IsType<CreatedResult>(result);
+        var created = Assert.IsType<CreatedAtActionResult>(result);
         Assert.Equal(201, created.StatusCode);
+        Assert.Equal(nameof(TodosController.GetById), created.ActionName);
 
         var todo = Assert.IsType<Todo>(created.Value);
         Assert.True(todo.Id > 0);
         Assert.Equal("Buy milk", todo.Title);
-        Assert.Equal($"/api/todos/{todo.Id}", created.Location);
+        Assert.Equal(todo.Id, created.RouteValues!["id"]);
     }
 
     [Theory]

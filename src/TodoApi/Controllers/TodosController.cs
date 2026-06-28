@@ -5,7 +5,8 @@ using TodoApi.Repositories;
 namespace TodoApi.Controllers;
 
 /// <summary>
-/// REST endpoints for todos. See design_doc/01-milestone-1-rest-api.md (§2 API contract).
+/// REST endpoints for todos under <c>/api/todos</c>.
+/// See design_doc/01-milestone-1-rest-api.md (§2 API contract).
 /// Depends on <see cref="ITodoRepository"/> so storage can be swapped without changing the controller.
 /// </summary>
 [ApiController]
@@ -17,6 +18,26 @@ public class TodosController : ControllerBase
     public TodosController(ITodoRepository repository)
     {
         _repository = repository;
+    }
+
+    /// <summary>Lists all todos. Returns 200 OK with an array (possibly empty).</summary>
+    [HttpGet]
+    public ActionResult<IEnumerable<Todo>> GetAll()
+    {
+        return Ok(_repository.GetAll());
+    }
+
+    /// <summary>Gets a single todo by id. Returns 200 OK, or 404 if not found.</summary>
+    [HttpGet("{id}", Name = "GetById")]
+    public ActionResult<Todo> GetById(int id)
+    {
+        var todo = _repository.GetById(id);
+        if (todo is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(todo);
     }
 
     /// <summary>
@@ -33,10 +54,6 @@ public class TodosController : ControllerBase
         }
 
         var created = _repository.Add(todo);
-
-        // Other endpoints (e.g. GET by id, TODOAPP-11) are being built in parallel,
-        // so we return the location URL directly rather than CreatedAtAction, which
-        // would depend on a GetById action that does not exist yet.
-        return Created($"/api/todos/{created.Id}", created);
+        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 }
