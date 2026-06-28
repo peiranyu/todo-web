@@ -482,3 +482,7 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# TodoApi runtime data (JSON file storage, Milestone 2)
+App_Data/
+todos.json
