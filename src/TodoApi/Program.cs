@@ -8,7 +8,7 @@ builder.Services.AddOpenApi();
 
 // Todo storage. Singleton so in-memory data persists for the app's lifetime.
 // Swap this single line for a database-backed repository in Milestone 2.
-builder.Services.AddSingleton<TodoApi.Repositories.ITodoRepository, TodoApi.Repositories.InMemoryTodoRepository>();
+builder.Services.AddSingleton<TodoApi.Repositories.ITodoRepository>(sp => new TodoApi.Repositories.JsonFileTodoRepository(System.IO.Path.Combine(sp.GetRequiredService<IHostEnvironment>().ContentRootPath, "App_Data", "todos.json")));
 
 var app = builder.Build();
 
